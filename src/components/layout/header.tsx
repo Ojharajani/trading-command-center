@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { useTheme } from 'next-themes'
 import { usePathname } from 'next/navigation'
 import { Sun, Moon, Bell, Search } from 'lucide-react'
@@ -8,6 +8,7 @@ import { Sun, Moon, Bell, Search } from 'lucide-react'
 const pageTitles: Record<string, string> = {
   '/dashboard': 'Dashboard',
   '/zones': 'Zone Bank',
+  '/accounts': 'Account Master',
   '/journal': 'Trading Journal',
   '/risk': 'Risk Management',
   '/money': 'Money Management',
@@ -23,13 +24,15 @@ export function Header() {
   const { theme, setTheme } = useTheme()
   const pathname = usePathname()
   const pageTitle = pageTitles[pathname] || 'Dashboard'
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
 
   return (
     <header className="sticky top-0 z-30 h-16 bg-background/80 backdrop-blur-md border-b border-border flex items-center justify-between px-6">
       <div>
         <h1 className="text-lg font-semibold text-foreground">{pageTitle}</h1>
         <p className="text-xs text-muted-foreground">
-          {new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          {mounted ? new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : '\u00A0'}
         </p>
       </div>
 
@@ -51,7 +54,7 @@ export function Header() {
           className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
           aria-label="Toggle theme"
         >
-          {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          {mounted && (theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />)}
         </button>
 
         {/* User Avatar */}

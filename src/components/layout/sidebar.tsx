@@ -6,12 +6,13 @@ import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Target, BookOpen, Shield, Wallet,
   Brain, TrendingUp, Receipt, Flag, Rocket, Settings,
-  ChevronLeft, ChevronRight, LogOut
+  ChevronLeft, ChevronRight, LogOut, Landmark
 } from 'lucide-react'
 
 const navItems = [
   { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { title: 'Zone Bank', href: '/zones', icon: Target },
+  { title: 'Account Master', href: '/accounts', icon: Landmark },
   { title: 'Trading Journal', href: '/journal', icon: BookOpen },
   { title: 'Risk Management', href: '/risk', icon: Shield },
   { title: 'Money Management', href: '/money', icon: Wallet },

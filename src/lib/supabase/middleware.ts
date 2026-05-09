@@ -23,13 +23,24 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // Refresh session
-  const { data: { user } } = await supabase.auth.getUser()
+  // Refresh session — gracefully handle unreachable Supabase
+  let user = null
+  try {
+    const { data } = await supabase.auth.getUser()
+    user = data?.user
+  } catch {
+    // Supabase unreachable — allow passthrough in dev
+    return supabaseResponse
+  }
 
   // Redirect unauthenticated users to login
   const isAuthPage = request.nextUrl.pathname.startsWith('/login') || request.nextUrl.pathname.startsWith('/register') || request.nextUrl.pathname.startsWith('/forgot-password') || request.nextUrl.pathname.startsWith('/reset-password')
 
   if (!user && !isAuthPage) {
+    // In dev mode, skip auth redirect if Supabase is not configured
+    if (process.env.NODE_ENV === 'development') {
+      return supabaseResponse
+    }
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)

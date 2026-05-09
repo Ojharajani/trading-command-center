@@ -4,17 +4,17 @@ import React from 'react'
 import { useStore } from '@/lib/store'
 import { Card, CardHeader, CardTitle, CardContent, StatCard, Badge, Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui'
 import { formatCurrency, formatPercent, formatNumber } from '@/lib/utils'
-import { calculateDashboardKPIs, getEquityCurve, getMonthlyPnL, getScoreColor, getScoreLabel } from '@/lib/calculations'
+import { calculateDashboardKPIs, getEquityCurve, getMonthlyPnL, getScoreColor } from '@/lib/calculations'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts'
-import { DollarSign, TrendingUp, Target, Activity, AlertTriangle, Shield, Zap, BarChart3 } from 'lucide-react'
+import { DollarSign, TrendingUp, Target, Activity, AlertTriangle, Shield, Zap, BarChart3, Gauge, Crosshair } from 'lucide-react'
 
 export default function DashboardPage() {
-  const { trades, zones, capitalLog, riskSettings } = useStore()
+  const { trades, zones, capitalLog, accounts } = useStore()
   const kpis = calculateDashboardKPIs(trades, capitalLog)
   const equityCurve = getEquityCurve(trades)
   const monthlyPnL = getMonthlyPnL(trades)
-  const recentTrades = [...trades].sort((a, b) => new Date(b.date_time).getTime() - new Date(a.date_time).getTime()).slice(0, 10)
-  const activeZones = zones.filter(z => z.status === 'Fresh' || z.status === 'Tested')
+  const recentTrades = [...trades].sort((a, b) => new Date(b.entry_datetime).getTime() - new Date(a.entry_datetime).getTime()).slice(0, 10)
+  const activeZones = zones.filter(z => z.status === 'Active')
 
   // Capital growth data
   const capitalData = capitalLog.map(c => ({
@@ -22,22 +22,23 @@ export default function DashboardPage() {
     capital: c.capital_amount,
   }))
 
-  // Risk violations check
-  const todayTrades = trades.filter(t => t.date_time.startsWith(new Date().toISOString().split('T')[0]))
-  const todayLoss = Math.abs(todayTrades.filter(t => t.pnl < 0).reduce((s, t) => s + t.pnl, 0))
+  // Risk violations — use first active account's limits as default
+  const defaultAccount = accounts.find(a => a.is_active) || accounts[0]
+  const todayTrades = trades.filter(t => t.entry_datetime.startsWith(new Date().toISOString().split('T')[0]))
+  const todayLoss = Math.abs(todayTrades.filter(t => (t.e_net_pnl || 0) < 0).reduce((s, t) => s + (t.e_net_pnl || 0), 0))
   const dailyLossPercent = kpis.totalCapital > 0 ? (todayLoss / kpis.totalCapital) * 100 : 0
   const riskAlerts: { type: string; message: string; severity: 'warning' | 'critical' }[] = []
-  
-  if (dailyLossPercent > riskSettings.max_daily_loss) {
-    riskAlerts.push({ type: 'Daily Loss', message: `Daily loss ${dailyLossPercent.toFixed(1)}% exceeds ${riskSettings.max_daily_loss}% limit`, severity: 'critical' })
+
+  if (defaultAccount && dailyLossPercent > defaultAccount.max_daily_loss) {
+    riskAlerts.push({ type: 'Daily Loss', message: `Daily loss ${dailyLossPercent.toFixed(1)}% exceeds ${defaultAccount.max_daily_loss}% limit`, severity: 'critical' })
   }
-  if (kpis.maxDrawdown > riskSettings.max_drawdown) {
-    riskAlerts.push({ type: 'Drawdown', message: `Max drawdown ${kpis.maxDrawdown.toFixed(1)}% exceeds ${riskSettings.max_drawdown}% limit`, severity: 'critical' })
+  if (defaultAccount && kpis.maxDrawdown > defaultAccount.max_drawdown) {
+    riskAlerts.push({ type: 'Drawdown', message: `Max drawdown ${kpis.maxDrawdown.toFixed(1)}% exceeds ${defaultAccount.max_drawdown}% limit`, severity: 'critical' })
   }
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Top KPI Cards */}
+      {/* Top KPI Cards — expanded from 4 to 8 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Total Capital"
@@ -137,46 +138,58 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Middle Metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      {/* Middle Metrics — v2 expanded to 8 */}
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
         <Card className="card-hover">
-          <CardContent className="p-4 text-center">
-            <p className="text-xs text-muted-foreground mb-1">Profit Factor</p>
-            <p className="text-xl font-bold text-foreground">{kpis.profitFactor === Infinity ? '∞' : kpis.profitFactor.toFixed(2)}</p>
+          <CardContent className="p-3 text-center">
+            <p className="text-[10px] text-muted-foreground mb-1">Profit Factor</p>
+            <p className="text-lg font-bold text-foreground">{kpis.profitFactor === Infinity ? '∞' : kpis.profitFactor.toFixed(2)}</p>
           </CardContent>
         </Card>
         <Card className="card-hover">
-          <CardContent className="p-4 text-center">
-            <p className="text-xs text-muted-foreground mb-1">Expectancy</p>
-            <p className={`text-xl font-bold ${kpis.expectancy >= 0 ? 'text-success' : 'text-destructive'}`}>
+          <CardContent className="p-3 text-center">
+            <p className="text-[10px] text-muted-foreground mb-1">Expectancy</p>
+            <p className={`text-lg font-bold ${kpis.expectancy >= 0 ? 'text-success' : 'text-destructive'}`}>
               {formatCurrency(kpis.expectancy)}
             </p>
           </CardContent>
         </Card>
         <Card className="card-hover">
-          <CardContent className="p-4 text-center">
-            <p className="text-xs text-muted-foreground mb-1">Avg RR</p>
-            <p className="text-xl font-bold text-foreground">{kpis.avgRR.toFixed(2)}</p>
+          <CardContent className="p-3 text-center">
+            <p className="text-[10px] text-muted-foreground mb-1">Avg R Multiple</p>
+            <p className="text-lg font-bold text-foreground">{kpis.avgRMultiple.toFixed(2)}</p>
           </CardContent>
         </Card>
         <Card className="card-hover">
-          <CardContent className="p-4 text-center">
-            <p className="text-xs text-muted-foreground mb-1">Max Drawdown</p>
-            <p className={`text-xl font-bold ${kpis.maxDrawdown > 10 ? 'text-destructive' : 'text-warning'}`}>
+          <CardContent className="p-3 text-center">
+            <p className="text-[10px] text-muted-foreground mb-1">Max Drawdown</p>
+            <p className={`text-lg font-bold ${kpis.maxDrawdown > 10 ? 'text-destructive' : 'text-warning'}`}>
               {kpis.maxDrawdown.toFixed(1)}%
             </p>
           </CardContent>
         </Card>
         <Card className="card-hover">
-          <CardContent className="p-4 text-center">
-            <p className="text-xs text-muted-foreground mb-1">Max Cons. Wins</p>
-            <p className="text-xl font-bold text-success">{kpis.consecutiveWins}</p>
+          <CardContent className="p-3 text-center">
+            <p className="text-[10px] text-muted-foreground mb-1">Capture Eff.</p>
+            <p className="text-lg font-bold text-primary">{kpis.captureEfficiency.toFixed(0)}%</p>
           </CardContent>
         </Card>
         <Card className="card-hover">
-          <CardContent className="p-4 text-center">
-            <p className="text-xs text-muted-foreground mb-1">Max Cons. Losses</p>
-            <p className="text-xl font-bold text-destructive">{kpis.consecutiveLosses}</p>
+          <CardContent className="p-3 text-center">
+            <p className="text-[10px] text-muted-foreground mb-1">Plan Adherence</p>
+            <p className="text-lg font-bold text-primary">{kpis.planAdherence.toFixed(0)}%</p>
+          </CardContent>
+        </Card>
+        <Card className="card-hover">
+          <CardContent className="p-3 text-center">
+            <p className="text-[10px] text-muted-foreground mb-1">MFE/MAE</p>
+            <p className="text-lg font-bold text-foreground">{kpis.mfeMaeRatio.toFixed(2)}</p>
+          </CardContent>
+        </Card>
+        <Card className="card-hover">
+          <CardContent className="p-3 text-center">
+            <p className="text-[10px] text-muted-foreground mb-1">Left on Table</p>
+            <p className="text-lg font-bold text-warning">{kpis.leftOnTable.toFixed(2)}R</p>
           </CardContent>
         </Card>
       </div>
@@ -193,32 +206,32 @@ export default function DashboardPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Date</TableHead>
-                  <TableHead>Symbol</TableHead>
-                  <TableHead>Direction</TableHead>
-                  <TableHead>Setup</TableHead>
+                  <TableHead>Instrument</TableHead>
+                  <TableHead>Bias</TableHead>
+                  <TableHead>Zone</TableHead>
                   <TableHead className="text-right">PnL</TableHead>
                   <TableHead>Result</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {recentTrades.map(trade => (
-                  <TableRow key={trade.id}>
+                  <TableRow key={trade.trade_id}>
                     <TableCell className="text-xs text-muted-foreground">
-                      {new Date(trade.date_time).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                      {new Date(trade.entry_datetime).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
                     </TableCell>
-                    <TableCell className="font-medium">{trade.symbol}</TableCell>
+                    <TableCell className="font-medium">{trade.b_instrument}</TableCell>
                     <TableCell>
-                      <Badge variant={trade.direction === 'Long' ? 'success' : 'destructive'}>
-                        {trade.direction}
+                      <Badge variant={trade.b_trade_bias === 'Bullish' ? 'success' : 'destructive'}>
+                        {trade.b_trade_bias}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-sm">{trade.setup}</TableCell>
-                    <TableCell className={`text-right font-mono font-medium ${trade.pnl >= 0 ? 'text-success' : 'text-destructive'}`}>
-                      {formatCurrency(trade.pnl)}
+                    <TableCell className="font-mono text-xs">{trade.zone_bank_id}</TableCell>
+                    <TableCell className={`text-right font-mono font-medium ${(trade.e_net_pnl || 0) >= 0 ? 'text-success' : 'text-destructive'}`}>
+                      {formatCurrency(trade.e_net_pnl || 0)}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={trade.result === 'Win' ? 'success' : trade.result === 'Loss' ? 'destructive' : 'secondary'}>
-                        {trade.result}
+                      <Badge variant={trade.e_result === 'Win' ? 'success' : trade.e_result === 'Loss' ? 'destructive' : 'secondary'}>
+                        {trade.e_result || 'Open'}
                       </Badge>
                     </TableCell>
                   </TableRow>
@@ -241,17 +254,20 @@ export default function DashboardPage() {
             <CardContent>
               <div className="space-y-2 max-h-[200px] overflow-y-auto">
                 {activeZones.slice(0, 6).map(zone => (
-                  <div key={zone.id} className="flex items-center justify-between p-2.5 rounded-lg bg-secondary/50">
+                  <div key={zone.zone_id} className="flex items-center justify-between p-2.5 rounded-lg bg-secondary/50">
                     <div>
-                      <span className="text-sm font-medium">{zone.symbol}</span>
+                      <span className="text-sm font-medium">{zone.instrument}</span>
                       <span className="text-xs text-muted-foreground ml-2">{zone.timeframe}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant={zone.zone_type === 'Demand' ? 'success' : 'destructive'}>
                         {zone.zone_type}
                       </Badge>
-                      <span className="text-xs font-bold" style={{ color: getScoreColor(zone.quality_score) }}>
-                        {zone.quality_score}
+                      <Badge variant={zone.heatmap_level === 'HOT' ? 'destructive' : zone.heatmap_level === 'WARM' ? 'warning' : 'secondary'}>
+                        {zone.heatmap_level}
+                      </Badge>
+                      <span className="text-xs font-bold" style={{ color: getScoreColor(zone.final_composite_score) }}>
+                        {zone.final_composite_score}
                       </span>
                     </div>
                   </div>

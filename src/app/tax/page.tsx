@@ -21,7 +21,6 @@ export default function TaxPage() {
   // Summary calculations
   const totalProfit = taxRecords.filter(t => t.profit_loss > 0).reduce((s, t) => s + t.profit_loss, 0)
   const totalLoss = Math.abs(taxRecords.filter(t => t.profit_loss < 0).reduce((s, t) => s + t.profit_loss, 0))
-  const netTaxable = totalProfit - totalLoss
   const totalTax = taxRecords.reduce((s, t) => s + t.tax_amount, 0)
   const fnoLoss = Math.abs(taxRecords.filter(t => t.trade_type === 'F&O' && t.profit_loss < 0).reduce((s, t) => s + t.profit_loss, 0))
 
@@ -146,7 +145,7 @@ export default function TaxPage() {
         <div className="space-y-4">
           <div>
             <Label>Linked Trade</Label>
-            <Select options={[{ value: '', label: 'Select Trade' }, ...trades.map(t => ({ value: t.id, label: `${t.id} — ${t.symbol} (${formatCurrency(t.pnl)})` }))]} value={form.trade_id || ''} onChange={e => setForm(f => ({ ...f, trade_id: e.target.value }))} />
+            <Select options={[{ value: '', label: 'Select Trade' }, ...trades.map(t => ({ value: t.trade_id, label: `${t.trade_id} — ${t.b_instrument} (${formatCurrency(t.e_net_pnl || 0)})` }))]} value={form.trade_id || ''} onChange={e => setForm(f => ({ ...f, trade_id: e.target.value }))} />
           </div>
           <div><Label>Profit/Loss (₹)</Label><Input type="number" value={form.profit_loss || ''} onChange={e => handlePLChange(Number(e.target.value))} /></div>
           <div>

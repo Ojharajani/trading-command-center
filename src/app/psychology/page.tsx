@@ -8,17 +8,17 @@ import { Brain, AlertTriangle, TrendingDown, CheckCircle2, XCircle } from 'lucid
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts'
 
 export default function PsychologyPage() {
-  const { trades, psychologyLog } = useStore()
+  const { trades } = useStore()
 
-  // Emotion vs Win Rate
+  // Emotion vs Win Rate — using Section F fields
   const emotionWinRate = useMemo(() => {
     const emotionMap = new Map<string, { wins: number; total: number }>()
-    trades.forEach(t => {
-      const emotion = t.emotion_before
+    trades.filter(t => t.f_pre_trade_emotion).forEach(t => {
+      const emotion = t.f_pre_trade_emotion || 'Neutral'
       if (!emotionMap.has(emotion)) emotionMap.set(emotion, { wins: 0, total: 0 })
       const e = emotionMap.get(emotion)!
       e.total++
-      if (t.result === 'Win') e.wins++
+      if (t.e_result === 'Win') e.wins++
     })
     return Array.from(emotionMap.entries()).map(([emotion, data]) => ({
       emotion,
@@ -27,52 +27,52 @@ export default function PsychologyPage() {
     }))
   }, [trades])
 
-  // Revenge trade frequency
-  const revengeTrades = psychologyLog.filter(p => p.revenge_trade)
-  const ruleViolations = psychologyLog.filter(p => p.rule_violation)
+  // From trade Section F
+  const revengeTrades = trades.filter(t => t.f_revenge_trade)
+  const planViolations = trades.filter(t => !t.f_followed_plan)
 
-  // Discipline trend
+  // Discipline trend — using f_discipline_score and f_confidence_score
   const disciplineTrend = useMemo(() => {
     return [...trades]
-      .sort((a, b) => new Date(a.date_time).getTime() - new Date(b.date_time).getTime())
+      .sort((a, b) => new Date(a.entry_datetime).getTime() - new Date(b.entry_datetime).getTime())
       .map((t, i) => ({
         trade: i + 1,
-        discipline: t.discipline_score,
-        confidence: t.confidence,
+        discipline: t.f_discipline_score || 0,
+        confidence: t.f_confidence_score || 0,
       }))
   }, [trades])
 
-  // Mistake breakdown
+  // Mistake breakdown — using g_mistake_tag
   const mistakeBreakdown = useMemo(() => {
     const map = new Map<string, number>()
     trades.forEach(t => {
-      if (t.mistake_type && t.mistake_type !== 'No Mistake') {
-        map.set(t.mistake_type, (map.get(t.mistake_type) || 0) + 1)
+      if (t.g_mistake_tag && t.g_mistake_tag !== 'No Mistake') {
+        map.set(t.g_mistake_tag, (map.get(t.g_mistake_tag) || 0) + 1)
       }
     })
     return Array.from(map.entries()).map(([type, count]) => ({ type, count })).sort((a, b) => b.count - a.count)
   }, [trades])
 
-  const avgDiscipline = trades.length > 0 ? trades.reduce((s, t) => s + t.discipline_score, 0) / trades.length : 0
-  const avgConfidence = trades.length > 0 ? trades.reduce((s, t) => s + t.confidence, 0) / trades.length : 0
+  const avgDiscipline = trades.length > 0 ? trades.reduce((s, t) => s + (t.f_discipline_score || 0), 0) / trades.length : 0
+  const avgConfidence = trades.length > 0 ? trades.reduce((s, t) => s + (t.f_confidence_score || 0), 0) / trades.length : 0
 
   // Insights
   const insights: string[] = []
-  const confidentTrades = trades.filter(t => t.emotion_before === 'Confident')
-  const greedTrades = trades.filter(t => t.emotion_before === 'Greed')
+  const confidentTrades = trades.filter(t => t.f_pre_trade_emotion === 'Confident')
+  const greedTrades = trades.filter(t => t.f_pre_trade_emotion === 'Greed')
   const confidentWR = calculateWinRate(confidentTrades)
   const greedWR = calculateWinRate(greedTrades)
   if (confidentTrades.length > 3 && confidentWR > 60) insights.push(`🎯 You perform best when confident — ${confidentWR.toFixed(0)}% win rate`)
   if (greedTrades.length > 2 && greedWR < 40) insights.push(`⚠️ Greedy trades hurt you — only ${greedWR.toFixed(0)}% win rate`)
   if (revengeTrades.length > 0) insights.push(`🔥 You've taken ${revengeTrades.length} revenge trade(s) — these rarely work`)
-  if (avgDiscipline < 6) insights.push(`📉 Average discipline is low (${avgDiscipline.toFixed(1)}/10) — focus on following your rules`)
-  if (avgDiscipline >= 8) insights.push(`✅ Excellent discipline (${avgDiscipline.toFixed(1)}/10) — keep it up!`)
+  if (avgDiscipline < 60) insights.push(`📉 Average discipline is low (${avgDiscipline.toFixed(0)}/100) — focus on following your rules`)
+  if (avgDiscipline >= 80) insights.push(`✅ Excellent discipline (${avgDiscipline.toFixed(0)}/100) — keep it up!`)
 
-  // Check for consecutive win pattern
+  // Check for consecutive win-then-loss pattern
   let consWinLoss = 0
-  const sortedTrades = [...trades].sort((a, b) => new Date(a.date_time).getTime() - new Date(b.date_time).getTime())
+  const sortedTrades = [...trades].sort((a, b) => new Date(a.entry_datetime).getTime() - new Date(b.entry_datetime).getTime())
   for (let i = 3; i < sortedTrades.length; i++) {
-    if (sortedTrades[i - 1].result === 'Win' && sortedTrades[i - 2].result === 'Win' && sortedTrades[i - 3].result === 'Win' && sortedTrades[i].result === 'Loss') {
+    if (sortedTrades[i - 1].e_result === 'Win' && sortedTrades[i - 2].e_result === 'Win' && sortedTrades[i - 3].e_result === 'Win' && sortedTrades[i].e_result === 'Loss') {
       consWinLoss++
     }
   }
@@ -82,10 +82,10 @@ export default function PsychologyPage() {
     <div className="space-y-6 animate-fade-in">
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard title="Avg Discipline" value={`${avgDiscipline.toFixed(1)}/10`} icon={<Brain className="w-5 h-5 text-primary" />} />
+        <StatCard title="Avg Discipline" value={`${avgDiscipline.toFixed(0)}/100`} icon={<Brain className="w-5 h-5 text-primary" />} />
         <StatCard title="Avg Confidence" value={`${avgConfidence.toFixed(1)}/10`} icon={<CheckCircle2 className="w-5 h-5 text-success" />} />
         <StatCard title="Revenge Trades" value={revengeTrades.length} icon={<AlertTriangle className="w-5 h-5 text-destructive" />} />
-        <StatCard title="Rule Violations" value={ruleViolations.length} icon={<XCircle className="w-5 h-5 text-destructive" />} />
+        <StatCard title="Plan Violations" value={planViolations.length} icon={<XCircle className="w-5 h-5 text-destructive" />} />
       </div>
 
       {/* Insights Card */}
@@ -131,7 +131,7 @@ export default function PsychologyPage() {
                 <LineChart data={disciplineTrend}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgb(var(--border))" />
                   <XAxis dataKey="trade" tick={{ fontSize: 11, fill: 'rgb(var(--muted-foreground))' }} label={{ value: 'Trade #', position: 'insideBottom', offset: -5, fill: 'rgb(var(--muted-foreground))' }} />
-                  <YAxis domain={[0, 10]} tick={{ fontSize: 11, fill: 'rgb(var(--muted-foreground))' }} />
+                  <YAxis tick={{ fontSize: 11, fill: 'rgb(var(--muted-foreground))' }} />
                   <Tooltip contentStyle={{ background: 'rgb(var(--card))', border: '1px solid rgb(var(--border))', borderRadius: '8px', color: 'rgb(var(--foreground))' }} />
                   <Line type="monotone" dataKey="discipline" stroke="#22C55E" strokeWidth={2} name="Discipline" dot={{ fill: '#22C55E', r: 3 }} />
                   <Line type="monotone" dataKey="confidence" stroke="#3B82F6" strokeWidth={2} name="Confidence" dot={{ fill: '#3B82F6', r: 3 }} />
@@ -163,27 +163,27 @@ export default function PsychologyPage() {
         </Card>
 
         <Card>
-          <CardHeader><CardTitle>Rule Violation Log</CardTitle></CardHeader>
+          <CardHeader><CardTitle>Revenge Trade Log</CardTitle></CardHeader>
           <CardContent>
-            {ruleViolations.length === 0 ? (
-              <div className="text-center py-6"><p className="text-sm text-success">No violations! Clean trading 💯</p></div>
+            {revengeTrades.length === 0 ? (
+              <div className="text-center py-6"><p className="text-sm text-success">No revenge trades! Clean trading 💯</p></div>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Trade</TableHead>
+                    <TableHead>Trade ID</TableHead>
+                    <TableHead>Instrument</TableHead>
+                    <TableHead>PnL</TableHead>
                     <TableHead>Mistake</TableHead>
-                    <TableHead>Revenge?</TableHead>
-                    <TableHead>Notes</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {ruleViolations.map(v => (
-                    <TableRow key={v.id}>
-                      <TableCell className="font-mono text-xs">{v.trade_id}</TableCell>
-                      <TableCell><Badge variant="destructive">{v.mistake_type}</Badge></TableCell>
-                      <TableCell>{v.revenge_trade ? <Badge variant="destructive">Yes</Badge> : <span className="text-muted-foreground">No</span>}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{v.notes}</TableCell>
+                  {revengeTrades.map(t => (
+                    <TableRow key={t.trade_id}>
+                      <TableCell className="font-mono text-xs">{t.trade_id}</TableCell>
+                      <TableCell>{t.b_instrument}</TableCell>
+                      <TableCell className={`font-mono ${(t.e_net_pnl || 0) >= 0 ? 'text-success' : 'text-destructive'}`}>{t.e_net_pnl || 0}</TableCell>
+                      <TableCell><Badge variant="destructive">{t.g_mistake_tag}</Badge></TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

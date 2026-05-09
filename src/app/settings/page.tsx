@@ -9,7 +9,7 @@ import { Settings, User, Shield, Palette, Download, Upload, Trash2, Moon, Sun, M
 import Papa from 'papaparse'
 
 export default function SettingsPage() {
-  const { riskSettings, updateRiskSettings, trades, zones, capitalLog, portfolio, taxRecords, milestones, growthPhases } = useStore()
+  const { accounts, trades, zones, capitalLog, portfolio, taxRecords, milestones, growthPhases } = useStore()
   const { toast } = useToast()
   const { theme, setTheme } = useTheme()
 
@@ -29,11 +29,11 @@ export default function SettingsPage() {
   const exportJSON = () => {
     const data = {
       exportDate: new Date().toISOString(),
-      version: '1.0',
+      version: '2.0',
+      accounts,
       trades,
       zones,
       capitalLog,
-      riskSettings,
       portfolio,
       taxRecords,
       milestones,
@@ -52,20 +52,30 @@ export default function SettingsPage() {
   // Export individual module CSVs
   const exportTradesCSV = () => {
     const csv = Papa.unparse(trades.map(t => ({
-      ID: t.id, Date: t.date_time, Symbol: t.symbol, Direction: t.direction, Setup: t.setup,
-      Entry: t.entry_price, SL: t.stop_loss, Target: t.target_price, Exit: t.exit_price,
-      Qty: t.position_size, RR: t.rr_ratio.toFixed(2), PnL: t.pnl, Result: t.result,
-      Emotion_Before: t.emotion_before, Emotion_After: t.emotion_after,
-      Confidence: t.confidence, Discipline: t.discipline_score, Mistake: t.mistake_type,
+      TradeID: t.trade_id, ZoneBankID: t.zone_bank_id, AccountID: t.account_id,
+      EntryDate: t.entry_datetime, ExitDate: t.exit_datetime || '', Horizon: t.trade_horizon,
+      Instrument: t.b_instrument, AssetClass: t.b_asset_class, ZoneType: t.b_zone_type,
+      Bias: t.b_trade_bias, Timeframe: t.b_timeframe, ZoneGrade: t.b_zone_grade,
+      Entry: t.d_entry_price, SL: t.d_stop_loss, Target: t.d_target_price,
+      Exit: t.e_exit_price || '', PositionSize: t.d_position_size,
+      RiskPct: t.d_risk_pct, PlannedRR: t.d_planned_rr,
+      RMultiple: t.e_r_multiple || '', NetPnL: t.e_net_pnl || '', Result: t.e_result || '',
+      Emotion_Before: t.f_pre_trade_emotion || '', Emotion_After: t.f_post_trade_emotion || '',
+      Confidence: t.f_confidence_score || '', Discipline: t.f_discipline_score || '',
+      Mistake: t.g_mistake_tag || '', PlanAdherence: t.j_plan_adherence_score_pct || '',
     })))
     downloadCSV(csv, 'trades')
   }
 
   const exportZonesCSV = () => {
     const csv = Papa.unparse(zones.map(z => ({
-      ID: z.id, Symbol: z.symbol, Type: z.zone_type, Subtype: z.zone_subtype,
-      Timeframe: z.timeframe, High: z.zone_high, Low: z.zone_low, Status: z.status,
-      Score: z.quality_score, TrapRisk: z.trap_risk, TestCount: z.test_count,
+      ZoneID: z.zone_id, Instrument: z.instrument, AssetClass: z.asset_class,
+      Type: z.zone_type, Subtype: z.zone_subtype, Bias: z.trade_bias,
+      Timeframe: z.timeframe, High: z.zone_high, Low: z.zone_low, Mid: z.zone_mid,
+      Status: z.status, Grade: z.zone_grade, CompositeScore: z.final_composite_score,
+      Heatmap: z.heatmap_level, MTFStack: z.mtf_stack_count,
+      Freshness: z.freshness, TestCount: z.test_count,
+      WinRate: z.zone_win_rate, LinkedTrades: z.linked_trade_count,
     })))
     downloadCSV(csv, 'zones')
   }
@@ -124,13 +134,13 @@ export default function SettingsPage() {
 
   // Data stats
   const stats = [
+    { label: 'Accounts', count: accounts.length },
     { label: 'Trades', count: trades.length },
     { label: 'Zones', count: zones.length },
     { label: 'Capital Entries', count: capitalLog.length },
     { label: 'Portfolio Items', count: portfolio.length },
     { label: 'Tax Records', count: taxRecords.length },
     { label: 'Milestones', count: milestones.length },
-    { label: 'Growth Phases', count: growthPhases.length },
   ]
 
   return (
@@ -148,20 +158,11 @@ export default function SettingsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label>Display Name</Label>
-              <Input
-                value={profile.name}
-                onChange={e => setProfile(p => ({ ...p, name: e.target.value }))}
-                className="mt-1"
-              />
+              <Input value={profile.name} onChange={e => setProfile(p => ({ ...p, name: e.target.value }))} className="mt-1" />
             </div>
             <div>
               <Label>Email</Label>
-              <Input
-                type="email"
-                value={profile.email}
-                onChange={e => setProfile(p => ({ ...p, email: e.target.value }))}
-                className="mt-1"
-              />
+              <Input type="email" value={profile.email} onChange={e => setProfile(p => ({ ...p, email: e.target.value }))} className="mt-1" />
             </div>
             <div>
               <Label>Currency</Label>
@@ -195,39 +196,6 @@ export default function SettingsPage() {
               <Save className="w-4 h-4 mr-1" />
               Save Profile
             </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Risk Defaults */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="w-5 h-5 text-primary" />
-            Risk Threshold Defaults
-          </CardTitle>
-          <CardDescription>Set your default risk management parameters</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[
-              { key: 'max_risk_per_trade', label: 'Max Risk Per Trade (%)', value: riskSettings.max_risk_per_trade },
-              { key: 'max_daily_loss', label: 'Max Daily Loss (%)', value: riskSettings.max_daily_loss },
-              { key: 'max_weekly_loss', label: 'Max Weekly Loss (%)', value: riskSettings.max_weekly_loss },
-              { key: 'max_drawdown', label: 'Max Drawdown (%)', value: riskSettings.max_drawdown },
-              { key: 'max_positions', label: 'Max Open Positions', value: riskSettings.max_positions },
-            ].map(setting => (
-              <div key={setting.key}>
-                <Label>{setting.label}</Label>
-                <Input
-                  type="number"
-                  step="0.5"
-                  value={setting.value}
-                  onChange={e => updateRiskSettings({ [setting.key]: Number(e.target.value) })}
-                  className="mt-1"
-                />
-              </div>
-            ))}
           </div>
         </CardContent>
       </Card>
@@ -353,7 +321,7 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold text-foreground">Trading Command Center</p>
-              <p className="text-xs text-muted-foreground">v1.0.0 — Built with Next.js + Tailwind CSS + Recharts</p>
+              <p className="text-xs text-muted-foreground">v2.0.0 — Architecture Review v2.0 Compliant</p>
             </div>
             <Badge variant="outline">Demo Mode</Badge>
           </div>

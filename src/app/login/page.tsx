@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { TrendingUp, Mail, Lock, LogIn, Eye, EyeOff } from 'lucide-react'
+import { Zap, Mail, Lock, LogIn, Eye, EyeOff } from 'lucide-react'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -49,30 +49,32 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-success/5 rounded-full blur-3xl" />
-      </div>
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Ambient background */}
+      <div className="absolute inset-0 gradient-mesh-auth" />
+      <div className="absolute top-1/3 left-1/4 w-[500px] h-[500px] bg-primary/[0.07] rounded-full blur-[100px] animate-float" />
+      <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-success/[0.05] rounded-full blur-[80px] animate-float" style={{ animationDelay: '1.5s' }} />
 
-      <div className="relative w-full max-w-md">
+      <div className="relative w-full max-w-md animate-fade-in">
+        {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary mb-4">
-            <TrendingUp className="w-8 h-8 text-primary-foreground" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl gradient-primary mb-5 shadow-lg shadow-primary/30 animate-float">
+            <Zap className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">Trading Command Center</h1>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">Trading Command Center</h1>
           <p className="text-sm text-muted-foreground mt-1">Sign in to your account</p>
         </div>
 
-        <div className="bg-card border border-border rounded-2xl shadow-2xl p-8">
+        {/* Card */}
+        <div className="glass-card rounded-2xl p-8">
           {/* Google Sign In */}
           <button
             onClick={handleGoogleLogin}
             disabled={googleLoading}
-            className="w-full h-11 flex items-center justify-center gap-3 rounded-lg border border-input bg-background text-sm font-medium hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-5"
+            className="w-full h-11 flex items-center justify-center gap-3 rounded-xl border border-border bg-background/50 text-sm font-medium hover:bg-accent/50 hover:border-primary/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed mb-5"
           >
             {googleLoading ? (
-              <div className="w-5 h-5 border-2 border-muted-foreground/30 border-t-muted-foreground rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-muted-foreground/30 border-t-primary rounded-full animate-spin" />
             ) : (
               <>
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -89,16 +91,16 @@ export default function LoginPage() {
           {/* Divider */}
           <div className="relative mb-5">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border" />
+              <div className="w-full border-t border-border/50" />
             </div>
             <div className="relative flex justify-center text-xs">
-              <span className="px-3 bg-card text-muted-foreground">or continue with email</span>
+              <span className="px-3 bg-card/80 text-muted-foreground/60">or continue with email</span>
             </div>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-5">
             {error && (
-              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-sm text-destructive">
+              <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-sm text-destructive animate-fade-in">
                 {error}
               </div>
             )}
@@ -106,12 +108,12 @@ export default function LoginPage() {
             <div>
               <label className="text-sm font-medium text-foreground block mb-1.5">Email</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full h-11 pl-10 pr-4 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="w-full h-11 pl-11 pr-4 rounded-xl border border-input bg-background/50 text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-primary/40 dark:bg-[rgb(15_18_30)]"
                   placeholder="you@example.com"
                   required
                 />
@@ -121,12 +123,12 @@ export default function LoginPage() {
             <div>
               <label className="text-sm font-medium text-foreground block mb-1.5">Password</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full h-11 pl-10 pr-11 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="w-full h-11 pl-11 pr-11 rounded-xl border border-input bg-background/50 text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-primary/40 dark:bg-[rgb(15_18_30)]"
                   placeholder="••••••••"
                   required
                   minLength={6}
@@ -134,7 +136,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -142,7 +144,7 @@ export default function LoginPage() {
             </div>
 
             <div className="flex justify-end">
-              <Link href="/forgot-password" className="text-xs text-primary hover:underline">
+              <Link href="/forgot-password" className="text-xs text-primary hover:text-primary/80 transition-colors">
                 Forgot Password?
               </Link>
             </div>
@@ -150,10 +152,10 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-11 flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full h-11 flex items-center justify-center gap-2 rounded-xl gradient-primary text-white font-medium text-sm shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:brightness-110 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
             >
               {loading ? (
-                <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
                   <LogIn className="w-4 h-4" />
@@ -166,15 +168,15 @@ export default function LoginPage() {
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
               Don&apos;t have an account?{' '}
-              <Link href="/register" className="text-primary font-medium hover:underline">
+              <Link href="/register" className="text-primary font-medium hover:text-primary/80 transition-colors">
                 Sign Up
               </Link>
             </p>
           </div>
         </div>
 
-        <p className="text-center text-xs text-muted-foreground mt-6">
-          Trading Command Center v1.0
+        <p className="text-center text-[11px] text-muted-foreground/40 mt-6 tracking-wide">
+          Trading Command Center v2.0
         </p>
       </div>
     </div>

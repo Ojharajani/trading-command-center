@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { TrendingUp, Mail, Lock, UserPlus, Eye, EyeOff } from 'lucide-react'
+import { Zap, Mail, Lock, UserPlus, Eye, EyeOff } from 'lucide-react'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -62,9 +62,10 @@ export default function RegisterPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="w-full max-w-md text-center">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-success/20 mb-4">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
+        <div className="absolute inset-0 gradient-mesh-auth" />
+        <div className="relative w-full max-w-md text-center animate-fade-in">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-success/20 mb-5">
             <Mail className="w-8 h-8 text-success" />
           </div>
           <h1 className="text-2xl font-bold text-foreground mb-2">Check your email</h1>
@@ -72,7 +73,7 @@ export default function RegisterPage() {
             We sent a confirmation link to <strong className="text-foreground">{email}</strong>.
             Click the link to activate your account.
           </p>
-          <Link href="/login" className="text-primary font-medium hover:underline">
+          <Link href="/login" className="text-primary font-medium hover:text-primary/80 transition-colors">
             Back to Login
           </Link>
         </div>
@@ -81,30 +82,30 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-success/5 rounded-full blur-3xl" />
-      </div>
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Ambient background */}
+      <div className="absolute inset-0 gradient-mesh-auth" />
+      <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] bg-primary/[0.07] rounded-full blur-[100px] animate-float" />
+      <div className="absolute bottom-1/4 left-1/4 w-[400px] h-[400px] bg-success/[0.05] rounded-full blur-[80px] animate-float" style={{ animationDelay: '1.5s' }} />
 
-      <div className="relative w-full max-w-md">
+      <div className="relative w-full max-w-md animate-fade-in">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary mb-4">
-            <TrendingUp className="w-8 h-8 text-primary-foreground" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl gradient-primary mb-5 shadow-lg shadow-primary/30 animate-float">
+            <Zap className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">Create Account</h1>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">Create Account</h1>
           <p className="text-sm text-muted-foreground mt-1">Start tracking your trades</p>
         </div>
 
-        <div className="bg-card border border-border rounded-2xl shadow-2xl p-8">
+        <div className="glass-card rounded-2xl p-8">
           {/* Google Sign Up */}
           <button
             onClick={handleGoogleSignUp}
             disabled={googleLoading}
-            className="w-full h-11 flex items-center justify-center gap-3 rounded-lg border border-input bg-background text-sm font-medium hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-5"
+            className="w-full h-11 flex items-center justify-center gap-3 rounded-xl border border-border bg-background/50 text-sm font-medium hover:bg-accent/50 hover:border-primary/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed mb-5"
           >
             {googleLoading ? (
-              <div className="w-5 h-5 border-2 border-muted-foreground/30 border-t-muted-foreground rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-muted-foreground/30 border-t-primary rounded-full animate-spin" />
             ) : (
               <>
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -120,16 +121,16 @@ export default function RegisterPage() {
 
           <div className="relative mb-5">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border" />
+              <div className="w-full border-t border-border/50" />
             </div>
             <div className="relative flex justify-center text-xs">
-              <span className="px-3 bg-card text-muted-foreground">or continue with email</span>
+              <span className="px-3 bg-card/80 text-muted-foreground/60">or continue with email</span>
             </div>
           </div>
 
           <form onSubmit={handleRegister} className="space-y-5">
             {error && (
-              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-sm text-destructive">
+              <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-sm text-destructive animate-fade-in">
                 {error}
               </div>
             )}
@@ -137,12 +138,12 @@ export default function RegisterPage() {
             <div>
               <label className="text-sm font-medium text-foreground block mb-1.5">Email</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full h-11 pl-10 pr-4 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="w-full h-11 pl-11 pr-4 rounded-xl border border-input bg-background/50 text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-primary/40 dark:bg-[rgb(15_18_30)]"
                   placeholder="you@example.com"
                   required
                 />
@@ -152,12 +153,12 @@ export default function RegisterPage() {
             <div>
               <label className="text-sm font-medium text-foreground block mb-1.5">Password</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full h-11 pl-10 pr-11 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="w-full h-11 pl-11 pr-11 rounded-xl border border-input bg-background/50 text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-primary/40 dark:bg-[rgb(15_18_30)]"
                   placeholder="Min 6 characters"
                   required
                   minLength={6}
@@ -165,7 +166,7 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -175,12 +176,12 @@ export default function RegisterPage() {
             <div>
               <label className="text-sm font-medium text-foreground block mb-1.5">Confirm Password</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full h-11 pl-10 pr-4 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="w-full h-11 pl-11 pr-4 rounded-xl border border-input bg-background/50 text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-primary/40 dark:bg-[rgb(15_18_30)]"
                   placeholder="••••••••"
                   required
                   minLength={6}
@@ -191,10 +192,10 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-11 flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full h-11 flex items-center justify-center gap-2 rounded-xl gradient-primary text-white font-medium text-sm shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:brightness-110 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
             >
               {loading ? (
-                <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
                   <UserPlus className="w-4 h-4" />
@@ -207,7 +208,7 @@ export default function RegisterPage() {
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
               Already have an account?{' '}
-              <Link href="/login" className="text-primary font-medium hover:underline">
+              <Link href="/login" className="text-primary font-medium hover:text-primary/80 transition-colors">
                 Sign In
               </Link>
             </p>

@@ -38,36 +38,44 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Top KPI Cards — expanded from 4 to 8 */}
+      {/* Top KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Total Capital"
           value={formatCurrency(kpis.totalCapital)}
-          icon={<DollarSign className="w-5 h-5 text-primary" />}
+          icon={<DollarSign className="w-5 h-5" />}
           trend="up"
           trendValue={formatPercent(((kpis.totalCapital - 500000) / 500000) * 100)}
           subtitle="from initial"
+          glowColor="green"
+          className="animate-stagger-1"
         />
         <StatCard
           title="Today's PnL"
           value={formatCurrency(kpis.todayPnl)}
-          icon={<TrendingUp className="w-5 h-5 text-primary" />}
+          icon={<TrendingUp className="w-5 h-5" />}
           trend={kpis.todayPnl >= 0 ? 'up' : 'down'}
           trendValue={kpis.totalCapital > 0 ? formatPercent((kpis.todayPnl / kpis.totalCapital) * 100) : '0%'}
+          glowColor={kpis.todayPnl >= 0 ? 'green' : 'red'}
+          className="animate-stagger-2"
         />
         <StatCard
           title="Monthly PnL"
           value={formatCurrency(kpis.monthlyPnl)}
-          icon={<BarChart3 className="w-5 h-5 text-primary" />}
+          icon={<BarChart3 className="w-5 h-5" />}
           trend={kpis.monthlyPnl >= 0 ? 'up' : 'down'}
           trendValue={kpis.totalCapital > 0 ? formatPercent((kpis.monthlyPnl / kpis.totalCapital) * 100) : '0%'}
+          glowColor={kpis.monthlyPnl >= 0 ? 'green' : 'red'}
+          className="animate-stagger-3"
         />
         <StatCard
           title="Win Rate"
           value={`${kpis.winRate.toFixed(1)}%`}
-          icon={<Target className="w-5 h-5 text-primary" />}
+          icon={<Target className="w-5 h-5" />}
           trend={kpis.winRate >= 50 ? 'up' : 'down'}
           trendValue={`${trades.length} trades`}
+          glowColor="blue"
+          className="animate-stagger-4"
         />
       </div>
 
@@ -87,8 +95,8 @@ export default function DashboardPage() {
                 <AreaChart data={equityCurve}>
                   <defs>
                     <linearGradient id="equityGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgb(var(--border))" />
@@ -98,7 +106,7 @@ export default function DashboardPage() {
                     contentStyle={{ background: 'rgb(var(--card))', border: '1px solid rgb(var(--border))', borderRadius: '8px', color: 'rgb(var(--foreground))' }}
                     formatter={(value) => [formatCurrency(Number(value)), 'Equity']}
                   />
-                  <Area type="monotone" dataKey="equity" stroke="#3B82F6" strokeWidth={2} fill="url(#equityGradient)" />
+                  <Area type="monotone" dataKey="equity" stroke="#6366f1" strokeWidth={2} fill="url(#equityGradient)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -138,60 +146,25 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Middle Metrics — v2 expanded to 8 */}
+      {/* Middle Metrics — Premium mini-cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
-        <Card className="card-hover">
-          <CardContent className="p-3 text-center">
-            <p className="text-[10px] text-muted-foreground mb-1">Profit Factor</p>
-            <p className="text-lg font-bold text-foreground">{kpis.profitFactor === Infinity ? '∞' : kpis.profitFactor.toFixed(2)}</p>
-          </CardContent>
-        </Card>
-        <Card className="card-hover">
-          <CardContent className="p-3 text-center">
-            <p className="text-[10px] text-muted-foreground mb-1">Expectancy</p>
-            <p className={`text-lg font-bold ${kpis.expectancy >= 0 ? 'text-success' : 'text-destructive'}`}>
-              {formatCurrency(kpis.expectancy)}
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="card-hover">
-          <CardContent className="p-3 text-center">
-            <p className="text-[10px] text-muted-foreground mb-1">Avg R Multiple</p>
-            <p className="text-lg font-bold text-foreground">{kpis.avgRMultiple.toFixed(2)}</p>
-          </CardContent>
-        </Card>
-        <Card className="card-hover">
-          <CardContent className="p-3 text-center">
-            <p className="text-[10px] text-muted-foreground mb-1">Max Drawdown</p>
-            <p className={`text-lg font-bold ${kpis.maxDrawdown > 10 ? 'text-destructive' : 'text-warning'}`}>
-              {kpis.maxDrawdown.toFixed(1)}%
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="card-hover">
-          <CardContent className="p-3 text-center">
-            <p className="text-[10px] text-muted-foreground mb-1">Capture Eff.</p>
-            <p className="text-lg font-bold text-primary">{kpis.captureEfficiency.toFixed(0)}%</p>
-          </CardContent>
-        </Card>
-        <Card className="card-hover">
-          <CardContent className="p-3 text-center">
-            <p className="text-[10px] text-muted-foreground mb-1">Plan Adherence</p>
-            <p className="text-lg font-bold text-primary">{kpis.planAdherence.toFixed(0)}%</p>
-          </CardContent>
-        </Card>
-        <Card className="card-hover">
-          <CardContent className="p-3 text-center">
-            <p className="text-[10px] text-muted-foreground mb-1">MFE/MAE</p>
-            <p className="text-lg font-bold text-foreground">{kpis.mfeMaeRatio.toFixed(2)}</p>
-          </CardContent>
-        </Card>
-        <Card className="card-hover">
-          <CardContent className="p-3 text-center">
-            <p className="text-[10px] text-muted-foreground mb-1">Left on Table</p>
-            <p className="text-lg font-bold text-warning">{kpis.leftOnTable.toFixed(2)}R</p>
-          </CardContent>
-        </Card>
+        {[
+          { label: 'Profit Factor', value: kpis.profitFactor === Infinity ? '∞' : kpis.profitFactor.toFixed(2), color: 'text-foreground' },
+          { label: 'Expectancy', value: formatCurrency(kpis.expectancy), color: kpis.expectancy >= 0 ? 'text-success' : 'text-destructive' },
+          { label: 'Avg R Multiple', value: kpis.avgRMultiple.toFixed(2), color: 'text-foreground' },
+          { label: 'Max Drawdown', value: `${kpis.maxDrawdown.toFixed(1)}%`, color: kpis.maxDrawdown > 10 ? 'text-destructive' : 'text-warning' },
+          { label: 'Capture Eff.', value: `${kpis.captureEfficiency.toFixed(0)}%`, color: 'text-primary' },
+          { label: 'Plan Adherence', value: `${kpis.planAdherence.toFixed(0)}%`, color: 'text-primary' },
+          { label: 'MFE/MAE', value: kpis.mfeMaeRatio.toFixed(2), color: 'text-foreground' },
+          { label: 'Left on Table', value: `${kpis.leftOnTable.toFixed(2)}R`, color: 'text-warning' },
+        ].map((metric, i) => (
+          <Card key={metric.label} className={`card-hover animate-stagger-${i + 1}`}>
+            <CardContent className="p-3 text-center">
+              <p className="text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-wider mb-1">{metric.label}</p>
+              <p className={`text-lg font-bold font-mono ${metric.color}`}>{metric.value}</p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Bottom Section */}
